@@ -1,0 +1,7 @@
+<launch>
+ 
+  <node name="vis_pose_test" pkg="vis_pose_test" type="vis_pose_test" output="screen">
+    <rosparam command="load" file="$(find vis_pose_test)/launch/vis_pose_test.yaml" />
+  </node>
+ 
+</launch>

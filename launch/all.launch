@@ -1,0 +1,5 @@
+<launch>
+	<include file="$(find brain_box)/launch/mavros.launch" /> 
+	<include file="$(find brain_box)/launch/aruco.launch" /> 
+	<include file="$(find brain_box)/launch/smart_pilot.launch" /> 
+</launch>

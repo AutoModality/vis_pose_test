@@ -1,0 +1,24 @@
+<launch>
+ 
+  <arg name="fcu_url" default="serial:///dev/ttyUSB0:921600" />
+  <arg name="gcs_url" default="udp://:14556@192.168.4.159:14550" />
+  <arg name="tgt_system" default="1" />
+  <arg name="tgt_component" default="50" />
+
+  <node name="am_rc_joystick" pkg="vis_pos_test" type="am_rc_joystick" output="screen"/>
+ 
+  <node name="mavros" pkg="mavros" type="mavros_node" output="screen">
+    <param name="fcu_url" value="$(arg fcu_url)" />
+    <param name="gcs_url" value="$(arg gcs_url)" />
+    <param name="target_system_id" value="$(arg tgt_system)" />
+    <param name="target_component_id" value="$(arg tgt_component)" />
+ 
+    <rosparam command="load" file="$(find vis_pose_test)/launch/px4_blacklist.yaml" />
+    <rosparam command="load" file="$(find vis_pose_test)/launch/px4_config.yaml" />
+
+    <!-- enable heartbeat send and reduce timeout -->
+    <param name="conn_heartbeat" value="5.0" />
+    <param name="conn_timeout" value="5.0" />
+  </node>
+ 
+</launch>

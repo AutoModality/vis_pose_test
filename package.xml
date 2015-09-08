@@ -1,0 +1,25 @@
+<package format="2">
+  <name>vis_pose_test</name>
+  <version>1.0.0</version>
+  <description>
+    AutoModality Vision Pose Test
+  </description>
+  <maintainer email="info@automodality.com">info</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>cv_bridge</depend>
+  <depend>genmsg</depend>
+  <depend>image_transport</depend>
+  <depend>sensor_msgs</depend>
+  <depend>control_toolbox</depend>
+  <depend>camera_info_manager</depend>
+  <depend>mavros</depend>
+  <depend>rosbag</depend>
+
+</package>
+
+
