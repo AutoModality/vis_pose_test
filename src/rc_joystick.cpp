@@ -11,7 +11,7 @@
 #include <sensor_msgs/Joy.h>
 #include <mavros/RCIn.h>
 
-#define NODE_NAME 			"am_rc_joystick"
+#define NODE_NAME 			"rc_joystick"
 
 #define RC_LOW_LEVEL		1100
 #define RC_MID_LEVEL		1500
