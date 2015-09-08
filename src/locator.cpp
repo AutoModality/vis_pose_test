@@ -79,7 +79,6 @@ void Locator::localPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& 
 
 void Locator::targetPoseCallback(const brain_box_msgs::BBPoseArray::ConstPtr& msgArray)
 {
-std::cout << "got target pose\n";
     // Check to see if we have any targets
     if (msgArray->poses.size() > 0)
     {
@@ -232,8 +231,6 @@ geometry_msgs::Pose& Locator::filterPosition(geometry_msgs::Pose pose)
 
 void Locator::updateFCULocation()
 {
-    std::cout << "Update Vision Pose\n";
-
     // Get the current target position wrt to the vehicle and some predefined origin
     visionPose.pose = getTargetCurrentENUWRTOrigin();
 
@@ -242,6 +239,10 @@ void Locator::updateFCULocation()
     visionPose.pose.position.y = -visionPose.pose.position.y;
     visionPose.pose.position.z = -visionPose.pose.position.z;
 
+    ROS_DEBUG("Update Vision Pose[%5.3f %5.3f %5.3f]",
+              visionPose.pose.position.x,
+              visionPose.pose.position.y,
+              visionPose.pose.position.z);
     visionPose.header.stamp = ros::Time::now();
     location_update_time = visionPose.header.stamp;
     //	printf("Update Vision Pose %5.3f  %5.3f  %5.3f\n", visionPose.pose.position.x, visionPose.pose.position.y, visionPose.pose.position.z);
