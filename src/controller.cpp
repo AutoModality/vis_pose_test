@@ -82,8 +82,8 @@ void Controller::sendAttitudeCommand()
     //	setpointCommandCnt = 0;
 
     brain_box_msgs::BBPose bbPose;
-    bbPose.pose = vehicle_command_ENU.getPose();
-    bbPose.throttle.data = vehicle_command_ENU.attitude.throttle;
+    bbPose.pose_throttle.pose = vehicle_command_ENU.getPose();
+    bbPose.pose_throttle.throttle.data = vehicle_command_ENU.attitude.throttle;
     bbPose.latency.smart_pilot_stamp1 = ros::Time::now();
     bbAttitudeSetpointPub.publish(bbPose);
 

@@ -90,7 +90,7 @@ void Locator::targetPoseCallback(const brain_box_msgs::BBPoseArray::ConstPtr& ms
         if (!targetPoseInitialized)
         {
             // Target pose not initialized so initialize it
-            target_current_RFU.setPose(msg.pose);
+            target_current_RFU.setPose(msg.pose_throttle.pose);
             targetPoseInitialized = true;
             if (vehiclePoseInitialized)
             {
@@ -104,7 +104,7 @@ void Locator::targetPoseCallback(const brain_box_msgs::BBPoseArray::ConstPtr& ms
         else
         {
             // Update the target state with the filtered position
-            geometry_msgs::Pose fPose = filterPosition(msg.pose);
+            geometry_msgs::Pose fPose = filterPosition(msg.pose_throttle.pose);
             target_current_RFU.setPose(fPose);
         }
 
