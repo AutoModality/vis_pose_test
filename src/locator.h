@@ -12,6 +12,7 @@
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/TwistStamped.h"
 #include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/PoseArray.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 
 #include "std_msgs/Float64.h"
@@ -102,7 +103,7 @@ private:
     /**
      * Callback for target pose from vision system
      */
-    virtual void targetPoseCallback(const brain_box_msgs::BBPoseArray::ConstPtr& msg);
+    virtual void targetPoseCallback(const geometry_msgs::PoseArray::ConstPtr& msg);
 
     /**
      * Handle for the main ROS node

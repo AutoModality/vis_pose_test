@@ -22,9 +22,6 @@
   <depend>rosbag</depend>
   <depend>brain_box_msgs</depend>
 
-  <build_depend>message_generation</build_depend>
-  <exec_depend>message_runtime</exec_depend>
-
 </package>
 
 

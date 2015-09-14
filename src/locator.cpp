@@ -30,7 +30,7 @@ void Locator::initROS(ros::NodeHandle *n)
     // vehicle pose from the FCU
     localPosSub = rosNode->subscribe("/mavros/local_position/local", 1000, &Locator::localPositionCallback, this);
     // target pose from the vision system
-    targetPosSub = rosNode->subscribe("/sensor/camera/target/actual", 1000, &Locator::targetPoseCallback, this);
+    targetPosSub = rosNode->subscribe("/target_pose", 1000, &Locator::targetPoseCallback, this);
 
     // Advertise the position topic to be published to the FCU
     localPosPub = rosNode->advertise<geometry_msgs::PoseStamped>("/mavros/vision_pose/pose", 1000);
@@ -77,20 +77,21 @@ void Locator::localPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& 
     }
 }
 
-void Locator::targetPoseCallback(const brain_box_msgs::BBPoseArray::ConstPtr& msgArray)
+void Locator::targetPoseCallback(const geometry_msgs::PoseArray::ConstPtr& msgArray)
 {
-    // Check to see if we have any targets
+    ROS_INFO_STREAM("targetPoseCallback");
+	// Check to see if we have any targets
     if (msgArray->poses.size() > 0)
     {
         // We have a target to process it
-        brain_box_msgs::BBPose msg = msgArray->poses.at(0);
+    	geometry_msgs::Pose msg = msgArray->poses.at(0);
         // copy the message header since we need it when we forward it on to mavros
-        visionPose.header = msg.header;
+        visionPose.header = msgArray->header;
 
         if (!targetPoseInitialized)
         {
             // Target pose not initialized so initialize it
-            target_current_RFU.setPose(msg.pose_throttle.pose);
+            target_current_RFU.setPose(msg);
             targetPoseInitialized = true;
             if (vehiclePoseInitialized)
             {
@@ -104,7 +105,7 @@ void Locator::targetPoseCallback(const brain_box_msgs::BBPoseArray::ConstPtr& ms
         else
         {
             // Update the target state with the filtered position
-            geometry_msgs::Pose fPose = filterPosition(msg.pose_throttle.pose);
+            geometry_msgs::Pose fPose = filterPosition(msg);
             target_current_RFU.setPose(fPose);
         }
 
@@ -245,7 +246,7 @@ void Locator::updateFCULocation()
               visionPose.pose.position.z);
     visionPose.header.stamp = ros::Time::now();
     location_update_time = visionPose.header.stamp;
-    //	printf("Update Vision Pose %5.3f  %5.3f  %5.3f\n", visionPose.pose.position.x, visionPose.pose.position.y, visionPose.pose.position.z);
+    printf("Update Vision Pose %5.3f  %5.3f  %5.3f\n", visionPose.pose.position.x, visionPose.pose.position.y, visionPose.pose.position.z);
 
     // Send the position to the FCU
     localPosPub.publish(visionPose);

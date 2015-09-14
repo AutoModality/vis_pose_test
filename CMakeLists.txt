@@ -4,7 +4,6 @@ project(vis_pose_test)
 
 find_package(
 	catkin REQUIRED 
-    message_generation
 	roscpp 
 	geometry_msgs 
 	std_msgs
@@ -18,18 +17,12 @@ find_package(
 	rosbag
 )
 
-add_message_files( FILES 
-	PoseThrottle.msg) 
-
-generate_messages( DEPENDENCIES std_msgs geometry_msgs )
 
 set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
 
 catkin_package(
     INCLUDE_DIRS include
-  LIBRARIES brain_box_msgs
     CATKIN_DEPENDS 
-    message_runtime
     	roscpp 
     	geometry_msgs 
         std_msgs

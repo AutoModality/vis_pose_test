@@ -26,8 +26,7 @@ void Controller::initROS(ros::NodeHandle *n)
     joySub = rosNode->subscribe<sensor_msgs::Joy>("joy", 10, &Controller::joyCallback, this);
 
     // Advertise the attitude setpoint topic
-    bbAttitudeSetpointPub = rosNode->advertise<brain_box_msgs::BBPose>("/vstate/pose/setpoint", 1000);
-//        attitudeSetpointPub = rosNode->advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_attitude/attitude", 1000);
+    ptAttitudeSetpointPub = rosNode->advertise<mavros::PoseThrottle>("/mavros/setpoint_attitude/pt_attitude", 1000);
 
     // Advertise the position setpoint topic
     positionSetpointPub = rosNode->advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 1000);
@@ -81,11 +80,10 @@ void Controller::sendAttitudeCommand()
     //	attitudeSetpointPub.publish(vpc);
     //	setpointCommandCnt = 0;
 
-    brain_box_msgs::BBPose bbPose;
-    bbPose.pose_throttle.pose = vehicle_command_ENU.getPose();
-    bbPose.pose_throttle.throttle.data = vehicle_command_ENU.attitude.throttle;
-    bbPose.latency.smart_pilot_stamp1 = ros::Time::now();
-    bbAttitudeSetpointPub.publish(bbPose);
+    mavros::PoseThrottle pt;
+    pt.pose = vehicle_command_ENU.getPose();
+    pt.throttle.data = vehicle_command_ENU.attitude.throttle;
+    ptAttitudeSetpointPub.publish(pt);
 
     lastLoopTime = ros::Time::now();
 
@@ -255,6 +253,8 @@ void Controller::watchDogLoop()
     if (dt.toSec() > WATCHDOG_TIMEOUT)
     {
         ROS_WARN("***** WARNING WATCHDOG TIMEOUT *****");
+        ROS_WARN_STREAM("isVehiclePoseInitialized: " << isVehiclePoseInitialized() <<
+        		", targetPoseInitialized: " << locator->isTargetPoseInitialized());
         if (locator != NULL)
         {
             locator->updateFCULocation();

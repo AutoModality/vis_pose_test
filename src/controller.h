@@ -24,16 +24,11 @@
 #include "control_toolbox/pid.h"
 
 #include "mavros/SetMode.h"
+#include "mavros/PoseThrottle.h"
 
 #include "std_msgs/Float64.h"
 #include "tf/transform_datatypes.h"
 #include "tf/LinearMath/Matrix3x3.h"
-
-#include "brain_box_msgs/BBPose.h"
-#include "brain_box_msgs/BBLatency.h"
-#include "brain_box_msgs/BBSPStatus.h"
-#include "brain_box_msgs/BBVxKinematics.h"
-#include "brain_box_msgs/BBVxCommand.h"
 
 #include "locator.h"
 
@@ -265,7 +260,7 @@ private:
     /**
      * ROS handle to publish attitude setpoints
      */
-    ros::Publisher bbAttitudeSetpointPub;
+    ros::Publisher ptAttitudeSetpointPub;
     //	ros::Publisher attitudeSetpointPub;
 
     /**
