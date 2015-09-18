@@ -23,7 +23,7 @@
 #include "geometry_msgs/TwistStamped.h"
 #include "geometry_msgs/Point.h"
 #include "tf/transform_datatypes.h"
-#include "tf/transform_broadcaster.h"
+//#include "tf/transform_broadcaster.h"
 #include "tf/transform_datatypes.h"
 #include "tf/LinearMath/Matrix3x3.h"
 
@@ -89,7 +89,7 @@ public:
     void setLinearVelocity(const geometry_msgs::Vector3& vel);
     void setLinearVelocity(double x, double y, double z);
 
-    void publishTransform();
+    //    void publishTransform();
     void test();
     void print();
 

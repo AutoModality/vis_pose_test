@@ -9,7 +9,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <sensor_msgs/Joy.h>
-#include <mavros/RCIn.h>
+#include <mavros_msgs/RCIn.h>
 
 #define NODE_NAME 			"rc_joystick"
 
@@ -114,13 +114,13 @@ int switchRC2(uint16_t value)
 	}
 }
 
-void rcInCB(const ros::MessageEvent<mavros::RCIn const>& event)
+void rcInCB(const ros::MessageEvent<mavros_msgs::RCIn const>& event)
 {
 	const std::string& sender = event.getPublisherName();
 	const ros::M_string& header = event.getConnectionHeader();
 	ros::Time receipt_time = event.getReceiptTime();
-	const mavros::RCIn::ConstPtr& msg = event.getMessage();
-	const mavros::RCIn rc_in = *(msg.get());
+	const mavros_msgs::RCIn::ConstPtr& msg = event.getMessage();
+	const mavros_msgs::RCIn rc_in = *(msg.get());
 
 	joy_.axes[JOY_AXES_THROTTLE] = scaleRC(rc_in.channels[RC_THROTTLE], false);
 	joy_.axes[JOY_AXES_YAW] = scaleRC(rc_in.channels[RC_YAW], false);

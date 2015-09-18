@@ -124,6 +124,7 @@ void Kinematics::setLinearVelocity(double x, double y, double z) {
     velLinear.z = z;
 }
 
+/*
 void Kinematics::publishTransform() {
     static tf::TransformBroadcaster br;
     tf::Transform transform;
@@ -133,7 +134,7 @@ void Kinematics::publishTransform() {
     transform.setRotation(q);
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "target"));
 }
-
+*/
 void Kinematics::test() {
     double roll = 1.0;
     double pitch = 1.1;

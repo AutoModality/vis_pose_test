@@ -53,7 +53,7 @@ geometry_msgs::Pose Locator::getTargetCurrentENUWRTOrigin()
 void Locator::localPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
     vehicle_current_ENU.setPose(msg->pose);
-    //	printf("VEHICLE POSE CALLBACK yaw = %f\n", vehicle_current_ENU.attitude.yaw);
+    //    printf("VEHICLE POSE CALLBACK yaw = %f\n", vehicle_current_ENU.attitude.yaw);
     if (!vehiclePoseInitialized)
     {
         if (targetPoseInitialized)
@@ -79,7 +79,7 @@ void Locator::localPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& 
 
 void Locator::targetPoseCallback(const geometry_msgs::PoseArray::ConstPtr& msgArray)
 {
-    ROS_INFO_STREAM("targetPoseCallback");
+  //ROS_INFO_STREAM("targetPoseCallback");
 	// Check to see if we have any targets
     if (msgArray->poses.size() > 0)
     {
@@ -105,9 +105,14 @@ void Locator::targetPoseCallback(const geometry_msgs::PoseArray::ConstPtr& msgAr
         else
         {
             // Update the target state with the filtered position
-            geometry_msgs::Pose fPose = filterPosition(msg);
-            target_current_RFU.setPose(fPose);
+	  //            geometry_msgs::Pose fPose = filterPosition(msg);
+	  //            target_current_RFU.setPose(fPose);
+            target_current_RFU.setPose(msg);
         }
+	printf("GOT TARGET RFU RPY - %0.3f, %0.3f, %0.3f\n",
+	       target_current_RFU.attitude.roll,
+	       target_current_RFU.attitude.pitch,
+	       target_current_RFU.attitude.yaw);
 
         if (vehiclePoseInitialized)
         {
@@ -246,7 +251,7 @@ void Locator::updateFCULocation()
               visionPose.pose.position.z);
     visionPose.header.stamp = ros::Time::now();
     location_update_time = visionPose.header.stamp;
-    printf("Update Vision Pose %5.3f  %5.3f  %5.3f\n", visionPose.pose.position.x, visionPose.pose.position.y, visionPose.pose.position.z);
+    //    printf("Update Vision Pose %5.3f  %5.3f  %5.3f\n", visionPose.pose.position.x, visionPose.pose.position.y, visionPose.pose.position.z);
 
     // Send the position to the FCU
     localPosPub.publish(visionPose);

@@ -23,8 +23,8 @@
 #include "sensor_msgs/Joy.h"
 #include "control_toolbox/pid.h"
 
-#include "mavros/SetMode.h"
-#include "mavros/PoseThrottle.h"
+#include "mavros_msgs/SetMode.h"
+#include "mavros_msgs/PoseThrottle.h"
 
 #include "std_msgs/Float64.h"
 #include "tf/transform_datatypes.h"
@@ -71,13 +71,16 @@ struct AxesScale
   double throttle;
 };
 
-const JoyAxes gpAxes = {4, 3, 0, 1};
-const AxesScale gpOffset = {0.0,0.0,0.0,0.0};
-const AxesScale gpScale = {-0.6, -0.6, 1.0, 0.6};
+//const JoyAxes gpAxes = {4, 3, 0, 1};
+//const AxesScale gpOffset = {0.0,0.0,0.0,0.0};
+//const AxesScale gpScale = {-0.6, -0.6, 1.0, 0.6};
 
+/*
+** Need to adjust these to match your joystick or RC controller
+*/ 
 const JoyAxes exAxes = {0, 1, 2, 3};
 const AxesScale exOffset = {0.0,0.0,0.0,1.0};
-const AxesScale exScale = {-0.6, -0.6, 1.0, 0.5};
+const AxesScale exScale = {-0.6, 0.6, 1.0, 0.5};
 const AxesScale exMax = {0.1, 0.1, 0.1, 0.01};
 
 

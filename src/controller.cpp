@@ -26,13 +26,13 @@ void Controller::initROS(ros::NodeHandle *n)
     joySub = rosNode->subscribe<sensor_msgs::Joy>("joy", 10, &Controller::joyCallback, this);
 
     // Advertise the attitude setpoint topic
-    ptAttitudeSetpointPub = rosNode->advertise<mavros::PoseThrottle>("/mavros/setpoint_attitude/pt_attitude", 1000);
+    ptAttitudeSetpointPub = rosNode->advertise<mavros_msgs::PoseThrottle>("/mavros/setpoint_attitude/pt_attitude", 1000);
 
     // Advertise the position setpoint topic
     positionSetpointPub = rosNode->advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 1000);
 
     // Subscribe to service for changing the FCU mode
-    setModeClient = rosNode->serviceClient<mavros::SetMode>("/mavros/set_mode");
+    setModeClient = rosNode->serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
 
     // Set up the control loop timer
     //        loopTimer = rosNode->createTimer(ros::Duration(1.0), &Controller::controlLoopCallback, this);
@@ -50,7 +50,7 @@ void Controller::initROS(ros::NodeHandle *n)
 void Controller::setFCUFlightModeManual()
 {
     // force the FCU to manual mode
-    mavros::SetMode mode;
+    mavros_msgs::SetMode mode;
     mode.request.base_mode = 0;
     mode.request.custom_mode = "MANUAL";
     if (setModeClient.call(mode))
@@ -80,7 +80,7 @@ void Controller::sendAttitudeCommand()
     //	attitudeSetpointPub.publish(vpc);
     //	setpointCommandCnt = 0;
 
-    mavros::PoseThrottle pt;
+    mavros_msgs::PoseThrottle pt;
     pt.pose = vehicle_command_ENU.getPose();
     pt.throttle.data = vehicle_command_ENU.attitude.throttle;
     ptAttitudeSetpointPub.publish(pt);
@@ -92,11 +92,11 @@ void Controller::sendAttitudeCommand()
 
 void Controller::sendAttitudeCommand(double roll, double pitch, double yaw, double throttle)
 {
-    ROS_INFO(">SEND ATT SETPOINT[R:%5.3f P:%5.3f Y:%5.3f T:%5.3f]",
+    ROS_DEBUG(">SEND ATT SETPOINT[R:%5.3f P:%5.3f Y:%5.3f T:%5.3f]",
              roll, pitch, yaw, throttle);
 
-    // Norte that roll and pitch are reversed to account for difference between NED and ENU
-    vehicle_command_ENU.setAttitude(pitch, roll, yaw, throttle);
+    //**    vehicle_command_ENU.setAttitude(pitch, roll, yaw, throttle);
+    vehicle_command_ENU.setAttitude(roll, pitch, yaw, throttle);
     sendAttitudeCommand();
 
     return;

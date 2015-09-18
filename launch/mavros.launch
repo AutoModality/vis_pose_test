@@ -2,8 +2,8 @@
  
   <arg name="fcu_url" default="serial:///dev/ttyUSB0:921600" />
   <arg name="gcs_url" default="udp://:14556@192.168.4.152:14550" />
-  <arg name="tgt_system" default="1" />
-  <arg name="tgt_component" default="50" />
+  <arg name="tgt_system" default="0" />
+  <arg name="tgt_component" default="0" />
 
   <node name="rc_joystick" pkg="vis_pose_test" type="rc_joystick" output="screen"/>
  
