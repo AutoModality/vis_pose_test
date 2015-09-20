@@ -62,11 +62,11 @@ void Locator::localPositionCallback(const geometry_msgs::PoseStamped::ConstPtr& 
         }
     }
     vehiclePoseInitialized = true;
-    ROS_DEBUG("<<<RECV LATT: r:%f p:%f y:%f",
+    ROS_INFO("<<<RECV LATT: r:%f p:%f y:%f",
               vehicle_current_ENU.attitude.roll,
               vehicle_current_ENU.attitude.pitch,
               vehicle_current_ENU.attitude.yaw);
-    ROS_DEBUG("<<<RECV POS: x:%f y:%f z:%f",
+    ROS_INFO("<<<RECV POS: x:%f y:%f z:%f",
               vehicle_current_ENU.position.x,
               vehicle_current_ENU.position.y,
               vehicle_current_ENU.position.z);
@@ -109,7 +109,10 @@ void Locator::targetPoseCallback(const geometry_msgs::PoseArray::ConstPtr& msgAr
 	  //            target_current_RFU.setPose(fPose);
             target_current_RFU.setPose(msg);
         }
-	printf("GOT TARGET RFU RPY - %0.3f, %0.3f, %0.3f\n",
+	printf("GOT TARGET RFU XYZ :  RPY - %0.3f, %0.3f, %0.3f :  %0.3f, %0.3f, %0.3f\n",
+	       target_current_RFU.position.x,
+	       target_current_RFU.position.y,
+	       target_current_RFU.position.z,
 	       target_current_RFU.attitude.roll,
 	       target_current_RFU.attitude.pitch,
 	       target_current_RFU.attitude.yaw);
@@ -241,9 +244,12 @@ void Locator::updateFCULocation()
     visionPose.pose = getTargetCurrentENUWRTOrigin();
 
     // Translate to the target frame
-    visionPose.pose.position.x = -visionPose.pose.position.x;
-    visionPose.pose.position.y = -visionPose.pose.position.y;
-    visionPose.pose.position.z = -visionPose.pose.position.z;
+    //    visionPose.pose.position.x = -visionPose.pose.position.x;
+    //    visionPose.pose.position.y = -visionPose.pose.position.y;
+    //    visionPose.pose.position.z = -visionPose.pose.position.z;
+    visionPose.pose.position.x = 1.0;
+    visionPose.pose.position.y = 2.0;
+    visionPose.pose.position.z = 3.0;
 
     ROS_DEBUG("Update Vision Pose[%5.3f %5.3f %5.3f]",
               visionPose.pose.position.x,
