@@ -45,9 +45,14 @@ enum FlightMode:int {MANUAL=0, ALTCTL, POSCTL, IDLE};
 #define B_FLIGHT_MODE   2
 
 /**
- * Timeout before sending another setpoint command
+ * Index of button in the joy message that determines if the FCU is in offboard mode
  */
-#define WATCHDOG_TIMEOUT 2.5
+#define OFF_BOARD_BUTTON 0
+
+/**
+ * Watchdog timeout period
+ */
+#define WATCHDOG_TIMEOUT 3
 
 /**
  * Joy stick axes mapping
@@ -71,16 +76,16 @@ struct AxesScale
   double throttle;
 };
 
-//const JoyAxes gpAxes = {4, 3, 0, 1};
-//const AxesScale gpOffset = {0.0,0.0,0.0,0.0};
-//const AxesScale gpScale = {-0.6, -0.6, 1.0, 0.6};
-
 /*
 ** Need to adjust these to match your joystick or RC controller
 */ 
+// The axis corresponding to the joystick
 const JoyAxes exAxes = {0, 1, 2, 3};
+// Offset of each axis inout
 const AxesScale exOffset = {0.0,0.0,0.0,1.0};
+// ascale of each axis input
 const AxesScale exScale = {-0.6, 0.6, 1.0, 0.5};
+// maximum value for each axis input
 const AxesScale exMax = {0.1, 0.1, 0.1, 0.01};
 
 
@@ -133,7 +138,7 @@ public:
      */
     void vehiclePositionUpdated();
 
-    /*
+    /**
      * Called by the Locator whenever the target pose is updated
      */
     void targetPositionUpdated();
@@ -142,7 +147,7 @@ public:
      * Initialize the locator associated with this controller
      */
     void setLocator(Locator* locator) {
-        this->locator = locator;
+        this->locator_ = locator;
     }
 
     bool isVehiclePoseInitialized();
@@ -154,23 +159,15 @@ private:
      */
     geometry_msgs::Pose calcPoseError(geometry_msgs::Pose sp, geometry_msgs::Pose pv);
 
-    //        /**
-    //         * Callback for control loop timer
-    //         */
-    //        virtual void controlLoopCallback(const ros::TimerEvent& te);
-
     /*
      * This is the main control loop that is called to update setpoints.
      * Currently this is called whenever the target pose is updated or the joy stick
      * inputs are processed.
-     * Also may be called by the watchdog timer if no updates have occured recently.
      */
     void controlLoop();
 
     /**
      * Callback for the watchdog timer
-     * This insures that locations and setpoints keep being sent to the FCU
-     * so that it does not drop out of offboard mode.
      */
     virtual void watchDogCallback(const ros::TimerEvent& te);
 
@@ -182,43 +179,42 @@ private:
     /**
      * ROS node handle
      */
-    ros::NodeHandle *rosNode;
+    ros::NodeHandle *ros_node_;
 
     /**
      * Vehicle pose command (atttude or position setpoint) state last sent to FCU
      */
-    Kinematics vehicle_command_ENU;
+    Kinematics vehicle_command_ENU_;
 
     /**
      * Desired vehicle pose
      */
-    Kinematics vehicle_setpoint_ENU;
+    Kinematics vehicle_setpoint_ENU_;
 
     /**
      * Locator associated with this controller
      */
-    Locator* locator {NULL};
+    Locator* locator_ {NULL};
 
 
-    ros::Time lastLoopTime;
-
-    /**
-     * Used to initialize the control loop
-     */
-    bool initLoop = false;
+    ros::Time last_update_time_;
 
     /**
      * Used to enable/disable the control loop
      */
-    bool controlEnabled = true;
+    bool control_enabled_ = true;
 
+    /**
+     * Used to enable/disable sending setpoints to the FCU
+     */
+    bool off_board_enabled_ = false;
 
     //        ros::Time in_time; // time when processing started
 
     /**
      * Timer used to control the watchdog
      */
-    ros::Timer watchDogTimer;
+    ros::Timer watchdog_timer_;
 
     /**
      * Initialize ROS handles
@@ -236,47 +232,34 @@ private:
     void sendPositionCommand();
 
     /**
-     * If the following is true then set the target setpoint to be equal to the next target Pose received.
+     * If the following is true then initialize the vehicle setpoints the next time a vehicle location is received
      */
-    bool setTargetSetpointEqCurrent {false};
+    bool initialize_setpoint_ {true};
 
-    /**
-     * If the following is true then set the vehicle command to be equal to the next vehicleLocation received,
-     * This provides a means to initialize the setpoints as the flight mode is changed
-     * fro MANUAL to ALTCTL or POSCTL
-     */
-    bool vehicleCommandEqCurrent {true};
-
-    /**
-     * Used to track when the last setpoint command was sent to the UAV
-     */
-//    int setpointCommandCnt = 0;
-
-    /*
+    /*===============
      * ROS handles
-     */
+     *===============*/
+
     /**
      * ROS joystick topic handle
      */
-    ros::Subscriber joySub;
+    ros::Subscriber joy_sub_;
 
     /**
      * ROS handle to publish attitude setpoints
      */
-    ros::Publisher ptAttitudeSetpointPub;
+    ros::Publisher pt_attitude_setpoint_pub_;
     //	ros::Publisher attitudeSetpointPub;
 
     /**
      * ROS handle to publish position setpoints
      */
-    ros::Publisher positionSetpointPub;
+    ros::Publisher position_setpoint_pub_;
 
     /**
      * ROS handle to set the FCU mode
      */
-    ros::ServiceClient setModeClient;
-
-    //	ros::Timer loopTimer;
+    ros::ServiceClient set_mode_client_;
 
     /*====================================================================
      * Methods and attributes for handing the joystick input and control
@@ -315,15 +298,15 @@ private:
         return msg->buttons[B_FLIGHT_MODE] < 4 ? (FlightMode)msg->buttons[B_FLIGHT_MODE] : FlightMode::IDLE;};
 
     /**
-     * Current flight mode
+     * Current offboard flight mode
      */
-    FlightMode flight_mode = FlightMode::IDLE;
+    FlightMode flight_mode_ = FlightMode::IDLE;
 
     // Joystick mappings and various parameters
-    JoyAxes joyAxes = exAxes;
-    AxesScale joyOffset = exOffset;
-    AxesScale attitudeScale = exScale;
-    AxesScale maxPos = exMax;
+    JoyAxes joy_axis_ = exAxes;
+    AxesScale joy_offset_ = exOffset;
+    AxesScale attitude_scale_ = exScale;
+    AxesScale max_pos_value_ = exMax;
     double th_deadband {0.25};
     double xy_deadband {0.05};
 };

@@ -43,11 +43,11 @@ public:
     virtual ~Locator();
 
     bool isVehiclePoseInitialized() const {
-        return vehiclePoseInitialized;
+        return vehiclePoseInitialized_;
     }
 
     bool isTargetPoseInitialized() const {
-        return targetPoseInitialized;
+        return targetPoseInitialized_;
     }
 
     /**
@@ -57,36 +57,48 @@ public:
     void updateFCULocation();
 
     /**
-     * Return the target coordiantes wrt to the target origin.
-     * Essentially this provides a means off creating an offset to the target
-     * coordinates by seting target_origin_ENU to non zero.
+     * Return the target coordinates wrt to the target origin.
+     * Essentially this provides a means of creating an offset to the target
+     * coordinates by setting target_origin_ENU to non zero.
      */
     geometry_msgs::Pose getTargetCurrentENUWRTOrigin();
 
     /**
-     * Convert offset from RFU coordinates into ENU coordinates
+     * Converts offsets from FLU body frame coordinates into ENU inertial frame coordinates.
+     * Possibly a more efficient way to do this with ROS frames.
      */
-    geometry_msgs::Point convertRFUtoENUoff(double right, double front, double up);
+    geometry_msgs::Point convertFLUtoENUoff(double front, double left, double up);
 
     /**
      * target pose in ENU frame
      */
-    Kinematics target_current_ENU;
+    Kinematics target_current_ENU_;
 
     /**
-     * target pose in Right, Front, Up (RFU) frame
+     * target pose in Front, Left, Up (FLU) frame
      */
-    Kinematics target_current_RFU;
+    Kinematics target_current_FLU_;
 
     /**
      * target origin in ENU
      */
-    Kinematics target_origin_ENU;
+    Kinematics target_origin_ENU_;
 
     /**
      * vehicle pose in ENU
      */
-    Kinematics vehicle_current_ENU;
+    Kinematics vehicle_current_ENU_;
+
+//    /**
+//     * Return the yaw of the target. This yaw is wrt the camera frame
+//     * The target of the yaw may or may not be support depending upon the
+//     * vision system.
+//     * In the case of the vision system used in conjunction with this test the yaw was actually returned
+//     * as the roll.
+//     */
+//    double getTargetYaw() {
+//    	return target_current_FLU.attitude.roll;
+//    }
 
 protected:
 private:
@@ -109,76 +121,79 @@ private:
      * Handle for the main ROS node
      */
 
-    ros::NodeHandle* rosNode;
+    ros::NodeHandle* ros_node_;
     /**
      * Handle for the pose received from the FCU
      */
 
-    ros::Subscriber localPosSub;
+    ros::Subscriber local_pos_sub_;
     /**
      * ROS handle for the target pose received from the vision system
      */
 
-    ros::Subscriber targetPosSub;
+    ros::Subscriber target_pos_sub_;
     /**
      * ROS handle for publishing the vision derived pose to the FCU
      */
 
-    ros::Publisher localPosPub;
+    ros::Publisher local_pos_pub_;
 
     /**
      * pointer to the controller used for controlling motion of vehicle
      */
-    Controller* controller {NULL};
+    Controller* controller_ {NULL};
 
     /**
-     * convert between RFU and ENU frames
+     * This function takes the FLU target pose which is relative to the vehicle and transforms it into
+     * the intertial frame with the vehicle at the origin.
+     * Possibly a more efficient way to do this with ROS frames
      */
-    void convertTargetRFUtoENU();
+    void convertTargetFLUtoENU();
 
     /**
      * time when the location was last updated
      */
-    ros::Time location_update_time;
+    ros::Time location_update_time_;
 
     /**
      * Used to track if the vehicle pose has been initialized
      */
-    bool vehiclePoseInitialized {false};
+    bool vehiclePoseInitialized_ {false};
 
     /**
      * Used to track if the target pose has been initialized
      */
-    bool targetPoseInitialized {false};
+    bool targetPoseInitialized_ {false};
 
     /**
      * Means for synchronizing the YAW of the target and the vehicle.
      * Used as part of the filtering.
+     * Only effective of the vision system provide a target yaw.
      */
-    void syncYawOrigins();
+    void syncVehicleandTargetPose();
 
-    double vehicleYawOrigin = 0.0;
-    double targetYawOrigin = 0.0;
-    double deltaVehicleYaw = 0.0;
-    double deltaTargetYaw = 0.0;
+//    double vehicleYawOrigin = 0.0;
+//    double targetYawOrigin = 0.0;
+//    double deltaVehicleYaw = 0.0;
+//    double deltaTargetYaw = 0.0;
 
     /**
      * Number of consecutive vision frames without a target.
      * Initialized to one so that any logic that depends on this being zero won't
      * execute until it is reset by the first valid frame.
      */
-    int positionErrorCnt = 1;
+    int position_error_cnt_ = 1;
 
     /**
      * Cache of the vision pose message
      * Primarily used to cache the header of the incoming target pose
      */
-    geometry_msgs::PoseStamped visionPose;
+    geometry_msgs::PoseStamped vision_pose_;
 
     /**
-     * Filtered pose
+     * Used to cache previous vision poses to perform some simple filtering
      */
-    geometry_msgs::Pose filteredPose;
+    geometry_msgs::Pose filtered_pose_;
 
     /**
      * Used to apply simple low pass filter to target locations.

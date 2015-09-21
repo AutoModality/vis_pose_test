@@ -10,7 +10,6 @@
 Controller::Controller(ros::NodeHandle* n)
 {
     initROS(n);
-    setTargetSetpointEqCurrent = true;
 }
 
 Controller::~Controller()
@@ -20,72 +19,53 @@ Controller::~Controller()
 
 void Controller::initROS(ros::NodeHandle *n)
 {
-    rosNode = n;
+    ros_node_ = n;
 
     // Subscribe to joystick topic
-    joySub = rosNode->subscribe<sensor_msgs::Joy>("joy", 10, &Controller::joyCallback, this);
+    joy_sub_ = ros_node_->subscribe<sensor_msgs::Joy>("joy", 10, &Controller::joyCallback, this);
 
     // Advertise the attitude setpoint topic
-    ptAttitudeSetpointPub = rosNode->advertise<mavros_msgs::PoseThrottle>("/mavros/setpoint_attitude/pt_attitude", 1000);
+    pt_attitude_setpoint_pub_ = ros_node_->advertise<mavros_msgs::PoseThrottle>("/mavros/setpoint_attitude/pt_attitude", 1000);
 
     // Advertise the position setpoint topic
-    positionSetpointPub = rosNode->advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 1000);
+    position_setpoint_pub_ = ros_node_->advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 1000);
 
     // Subscribe to service for changing the FCU mode
-    setModeClient = rosNode->serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
-
-    // Set up the control loop timer
-    //        loopTimer = rosNode->createTimer(ros::Duration(1.0), &Controller::controlLoopCallback, this);
-    //	loopTimer.stop();
+    // Currently not used
+    set_mode_client_ = ros_node_->serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
 
     // Set up the watchdog timer
-    watchDogTimer = rosNode->createTimer(ros::Duration(0.2), &Controller::watchDogCallback, this);
-    watchDogTimer.start();
+    watchdog_timer_ = ros_node_->createTimer(ros::Duration(0.2), &Controller::watchDogCallback, this);
+    watchdog_timer_.start();
 
     ROS_INFO("^^^ ROS ON CONTROLLER INITIALIZED ^^^");
 
     return;
 }
 
-void Controller::setFCUFlightModeManual()
-{
-    // force the FCU to manual mode
-    mavros_msgs::SetMode mode;
-    mode.request.base_mode = 0;
-    mode.request.custom_mode = "MANUAL";
-    if (setModeClient.call(mode))
-    {
-        ROS_INFO("Setting FCU to manual mode");
-    }
-    else
-    {
-        ROS_ERROR("Failed to set FCU to manual mode");
-    }
-    return;
-}
-
 void Controller::locationError()
 {
-    // As a failsafe set the FCU flight mode to manual
-    setFCUFlightModeManual();
+	// An error has occurred so stop sending setpoints to the FCU and let it do its normal
+	// failsafe to drop out of offboard mode
+	off_board_enabled_ = false;
 }
 
 
 void Controller::sendAttitudeCommand()
 {
-    // Port to this when we eliminate BB
-    //	geometry_msgs::PoseStamped vpc;
-    //	vpc.pose = vehicleState->vehicle_command_ENU.getPose();
-    //	vpc.header.stamp = ros::Time::now();
-    //	attitudeSetpointPub.publish(vpc);
-    //	setpointCommandCnt = 0;
+	/*
+	 * Don't send setpoint unless offboard enabled.
+	 */
+	if (!off_board_enabled_)
+	{
+		return;
+	}
+	mavros_msgs::PoseThrottle pt;
+    pt.pose = vehicle_command_ENU_.getPose();
+    pt.throttle.data = vehicle_command_ENU_.attitude.throttle;
+    pt_attitude_setpoint_pub_.publish(pt);
 
-    mavros_msgs::PoseThrottle pt;
-    pt.pose = vehicle_command_ENU.getPose();
-    pt.throttle.data = vehicle_command_ENU.attitude.throttle;
-    ptAttitudeSetpointPub.publish(pt);
-
-    lastLoopTime = ros::Time::now();
+    last_update_time_ = ros::Time::now();
 
     return;
 }
@@ -95,8 +75,7 @@ void Controller::sendAttitudeCommand(double roll, double pitch, double yaw, doub
     ROS_DEBUG(">SEND ATT SETPOINT[R:%5.3f P:%5.3f Y:%5.3f T:%5.3f]",
              roll, pitch, yaw, throttle);
 
-    //**    vehicle_command_ENU.setAttitude(pitch, roll, yaw, throttle);
-    vehicle_command_ENU.setAttitude(roll, pitch, yaw, throttle);
+    vehicle_command_ENU_.setAttitude(roll, pitch, yaw, throttle);
     sendAttitudeCommand();
 
     return;
@@ -104,63 +83,47 @@ void Controller::sendAttitudeCommand(double roll, double pitch, double yaw, doub
 
 void Controller::vehiclePositionUpdated()
 {
-    if (vehicleCommandEqCurrent && locator != NULL)
+    if (initialize_setpoint_ && locator_ != NULL)
     {
-         // Initialize the vehicle command equal to the current position
-        vehicle_command_ENU.setPose(locator->vehicle_current_ENU.getPose());
+        // Initialize the vehicle's current setpoints equal to the current position.
+        vehicle_command_ENU_.setPose(locator_->vehicle_current_ENU_.getPose());
+        vehicle_setpoint_ENU_.setPose(locator_->vehicle_current_ENU_.getPose());
 
-        vehicleCommandEqCurrent = false;
+        initialize_setpoint_ = false;
     }
 }
 
 void Controller::targetPositionUpdated()
 {
-    // Do the normal control loop
-    controlLoop();
+	// Do nothing place holder for those that want to do some sort of control on each target frame update
+	return;
 }
 
 void Controller::sendPositionCommand()
 {
-	if (locator == NULL || !locator->isTargetPoseInitialized())
+	if (locator_ == NULL || !locator_->isTargetPoseInitialized() || !off_board_enabled_)
 	{
 		return;
 	}
-//	ROS_DEBUG("SEND POS CMD");
 	geometry_msgs::PoseStamped vpc;
-	vpc.pose = vehicle_command_ENU.getPose();
+	vpc.pose = vehicle_command_ENU_.getPose();
 	vpc.header.stamp = ros::Time::now();
-	positionSetpointPub.publish(vpc);
-        ROS_INFO(">SEND POS SETPOINT[X:%5.3f Y:%5.3f Z:%5.3f]",
-                 vpc.pose.position.x,
-                 vpc.pose.position.y,
-                 vpc.pose.position.z);
+	position_setpoint_pub_.publish(vpc);
+	ROS_DEBUG(">SEND POS SETPOINT[X:%5.3f Y:%5.3f Z:%5.3f]",
+			vpc.pose.position.x,
+			vpc.pose.position.y,
+			vpc.pose.position.z);
 
-//	setpointCommandCnt = 0;
-
-//##	brain_box_msgs::BBPose bbPose;
-//	bbPose.header = targetPoseCurrent.header;
-//	bbPose.pose = vehiclePoseCommand.pose;
-//	bbPose.throttle.data = vehicleAttitudeCommand.throttle;
-//	bbPose.latency = targetPoselatency;
-//	bbPose.latency.smart_pilot_stamp0 = in_time;
-//	bbPose.latency.smart_pilot_stamp1 = ros::Time::now();
-//	bbAttitudeSetpointPub.publish(bbPose);
-
-//	setpointCommandCnt = 0;
-
-	lastLoopTime = ros::Time::now();
+	last_update_time_ = ros::Time::now();
 
 	return;
 }
 
 void Controller::setPositionCommand(double x, double y, double z)
 {
-//	ROS_DEBUG("++++SET POS[X:%5.3f Y:%5.3f Z:%5.3f]", x, y, z);
-
-	VehicleAttitude va = vehicle_setpoint_ENU.attitude;
-	va.yaw = -va.yaw;
-	vehicle_command_ENU.setAttitude(va);
-	vehicle_command_ENU.setPosition(x, y, z);
+	VehicleAttitude va = vehicle_setpoint_ENU_.attitude;
+	vehicle_command_ENU_.setAttitude(va);
+	vehicle_command_ENU_.setPosition(x, y, z);
 
 	return;
 }
@@ -169,99 +132,19 @@ void Controller::sendPositionCommand(double x, double y, double z)
 {
 	setPositionCommand(x, y, z);
 
-//	VehicleAttitude va = vehicleState->vehicle_setpoint_ENU.attitude;
-//	va.yaw = -va.yaw;
-//	vehicleState->vehicle_command_ENU.setAttitude(va);
-//	vehicleState->vehicle_command_ENU.setPosition(x, y, z);
 	sendPositionCommand();
 
 	return;
 }
 
-//void Controller::startControlLoop(double period) {
-//	loopTimer.setPeriod(ros::Duration(period));
-//	loopTimer.start();
-//	ROS_INFO("TIMER STARTED");
-//
-//	return;
-//}
-//
-//void Controller::doControlMode() {
-//	printf("++++ ");
-//	switch (controlMode)
-//	{
-//	case ControlMode::LANDED:
-//		printf("LANDED\n");
-//		break;
-//	case ControlMode::LANDING_WAYPOINT:
-//		printf("LANDING_WAYPOINT\n");
-//		landVehicleWaypoint();
-//		break;
-//	case ControlMode::LANDING_DESCENDING:
-//		printf("LANDING_DESCENDING\n");
-//		landVehicleDescending();
-//		break;
-//	case ControlMode::LOITER:
-//		printf("LOITER\n");
-//		break;
-//	case ControlMode::TAKING_OFF:
-//		printf("TAKING OFF\n");
-//		launchVehicle();
-//		return;
-//		break;
-//	case ControlMode::TRACKING_TARGET_TRANSITION:
-//		printf("TRANSITION\n");
-//		changingTarget();
-//		break;
-//	case ControlMode::TRACKING_TARGET:
-//		printf("TRACKING\n");
-//		break;
-//	}
-//	geometry_msgs::Pose sp = vehicleState->vehicle_command_ENU.getPose();
-//	sendPositionCommand(sp.position.x, sp.position.y, sp.position.z);
-//}
-
-//void Controller::controlLoopCallback(const ros::TimerEvent& te) {
-//    controlLoop();
-//}
-
-void Controller::controlLoop()
-{
-    if (!controlEnabled)
-    {
-        return;
-    }
-
-
-    if (!initLoop)
-    {
-        initLoop = true;
-    }
-    else
-    {
-        // Currently send the position setpoint
-        geometry_msgs::Pose sp = vehicle_command_ENU.getPose();
-        sendPositionCommand(sp.position.x, sp.position.y, sp.position.z);
-    }
-
-    return;
-}
-
 void Controller::watchDogLoop()
 {
-    ros::Duration dt =  ros::Time::now() - lastLoopTime;
+    ros::Duration dt =  ros::Time::now() - last_update_time_;
     if (dt.toSec() > WATCHDOG_TIMEOUT)
     {
-        ROS_WARN("***** WARNING WATCHDOG TIMEOUT *****");
-        ROS_WARN_STREAM("isVehiclePoseInitialized: " << isVehiclePoseInitialized() <<
-        		", targetPoseInitialized: " << locator->isTargetPoseInitialized());
-        if (locator != NULL)
-        {
-            locator->updateFCULocation();
-        }
+        ROS_WARN("***** WATCHDOG TIMEOUT NOT SENDING SETPOINTS *****");
 
-        // Simply resend the last position command
-        sendPositionCommand();
+        last_update_time_ = ros::Time::now();
     }
 }
 
@@ -272,12 +155,12 @@ void Controller::watchDogCallback(const ros::TimerEvent& te)
 
 bool Controller::isVehiclePoseInitialized()
 {
-    return locator == NULL ? false : locator->isVehiclePoseInitialized();
+    return locator_ == NULL ? false : locator_->isVehiclePoseInitialized();
 }
 
 void Controller::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
 {
-    if (locator == NULL)
+    if (locator_ == NULL)
     {
         return;
     }
@@ -288,15 +171,27 @@ void Controller::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
     {
         case FlightMode::MANUAL:
         {
-            //**              printf("JOY ---- MANUAL\n");
-            if (flight_mode != FlightMode::MANUAL)
+            /*
+             * Fail safe mechanism to only enable offboard mode when the flight mode is manual AND
+             * The offboard button on the RC controller is not enabled.
+             * This will ensure that if off board mode is ever disabled then certain steps must be taken
+             * by the operator to put it back into offboard mode.
+             * Note that a better way to do this would be to query the FCU for its flight mode instead
+             * instead of relying on the state of the offboard switch on the joystick.
+             */
+            if (!msg->buttons[OFF_BOARD_BUTTON])
             {
-                ROS_INFO("ENTERING FILIGHT MODE MANUAL");
+            	off_board_enabled_ = true;
+            }
+
+            if (flight_mode_ != FlightMode::MANUAL)
+            {
+                ROS_INFO("ENTERING FLIGHT MODE MANUAL");
             }
             joyCallback(msg, fm);
-            flight_mode = FlightMode::MANUAL;
+            flight_mode_ = FlightMode::MANUAL;
             // Since we are in manual mode disable the automatic control loop
-            controlEnabled = false;
+            control_enabled_ = false;
 
             return;
         }
@@ -304,22 +199,18 @@ void Controller::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
         case FlightMode::POSCTL:
         case FlightMode::ALTCTL:
         {
-            if (flight_mode != fm)
+            if (flight_mode_ != fm)
             {
                 ROS_INFO("ENTERING FLIGHT MODE: %s\n", fm == FlightMode::POSCTL ? "POSCTL" : "ALTCTL");
             }
-            if (flight_mode == FlightMode::MANUAL)
+            if (flight_mode_ == FlightMode::MANUAL)
             {
-                controlEnabled = true;
-                // initialize the setpoint to the current position so that the joystick
-                // inputs create setpoints relative to that.
-                vehicle_setpoint_ENU.setPose(locator->vehicle_current_ENU.getPose());
-                ROS_INFO("Vehicle command updated x:%5.3f y:%5.3f z:%5.3f",
-                         vehicle_command_ENU.getPose().position.x,
-                         vehicle_command_ENU.getPose().position.y,
-                         vehicle_command_ENU.getPose().position.z);
+                control_enabled_ = true;
+                // initialize the setpoint to the current vehicle position so that the joystick
+                // inputs create position setpoints relative to that.
+                vehicle_setpoint_ENU_.setPose(locator_->vehicle_current_ENU_.getPose());
             }
-            flight_mode = fm;
+            flight_mode_ = fm;
             // Process the joystick inputs considering the flight mode
             joyCallback(msg, fm);
         }
@@ -329,26 +220,26 @@ void Controller::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
 
 void Controller::joyCallback(const sensor_msgs::Joy::ConstPtr& msg, FlightMode fm)
 {
-//      ROS_INFO("RAW JOY: AXES[%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f] BUTTONS[%d %d %d %d]",
-//                      (double)msg->axes[0],
-//                      (double)msg->axes[1],
-//                      (double)msg->axes[2],
-//                      (double)msg->axes[3],
-//                      (double)msg->axes[4],
-//                      (double)msg->axes[5],
-//                      msg->buttons[0],
-//                      msg->buttons[1],
-//                      msg->buttons[2],
-//                      msg->buttons[3]);
+	ROS_DEBUG("RAW JOY: AXES[%4.2f %4.2f %4.2f %4.2f %4.2f %4.2f] BUTTONS[%d %d %d %d]",
+			(double)msg->axes[0],
+			(double)msg->axes[1],
+			(double)msg->axes[2],
+			(double)msg->axes[3],
+			(double)msg->axes[4],
+			(double)msg->axes[5],
+			msg->buttons[0],
+			msg->buttons[1],
+			msg->buttons[2],
+			msg->buttons[3]);
     ROS_DEBUG("RPYT[%4.2f %4.2f %4.2f %4.2f]",
-                (double)msg->axes[joyAxes.roll],
-                        (double)msg->axes[joyAxes.pitch],
-                        (double)msg->axes[joyAxes.yaw],
-                        (double)msg->axes[joyAxes.throttle]);
+                (double)msg->axes[joy_axis_.roll],
+                        (double)msg->axes[joy_axis_.pitch],
+                        (double)msg->axes[joy_axis_.yaw],
+                        (double)msg->axes[joy_axis_.throttle]);
 
     if (isVehiclePoseInitialized())
     {
-        VehicleAttitude currentAttitude = locator->vehicle_current_ENU.getAttitude();
+        VehicleAttitude currentAttitude = locator_->vehicle_current_ENU_.getAttitude();
 
         ROS_DEBUG("<ATT[r:%5.3f p:%5.3f y:%5.3f t:%5.3f]",
                   currentAttitude.roll,
@@ -377,16 +268,16 @@ void Controller::updateAttitudeSetpoint(const sensor_msgs::Joy::ConstPtr& msg, V
     double roll_sp, pitch_sp, yaw_sp, throttle_sp;
 
     // Calculate pitch
-    pitch_sp = (msg->axes[joyAxes.pitch] + joyOffset.pitch) * attitudeScale.pitch;
+    pitch_sp = (msg->axes[joy_axis_.pitch] + joy_offset_.pitch) * attitude_scale_.pitch;
 
     // Calculate roll
-    roll_sp = (msg->axes[joyAxes.roll] + joyOffset.roll) * attitudeScale.roll;
+    roll_sp = (msg->axes[joy_axis_.roll] + joy_offset_.roll) * attitude_scale_.roll;
 
     // Calculate yaw
-    yaw_sp = ((msg->axes[joyAxes.yaw] + joyOffset.yaw) * attitudeScale.yaw) + currentAttitude.yaw;
+    yaw_sp = ((msg->axes[joy_axis_.yaw] + joy_offset_.yaw) * attitude_scale_.yaw) + currentAttitude.yaw;
 
     // Calculate the throttle
-    throttle_sp = (msg->axes[joyAxes.throttle] + joyOffset.throttle) * attitudeScale.throttle;
+    throttle_sp = (msg->axes[joy_axis_.throttle] + joy_offset_.throttle) * attitude_scale_.throttle;
     if (throttle_sp < 0)
     {
         throttle_sp = 0;
@@ -400,43 +291,43 @@ void Controller::updatePositionSetpoint(const sensor_msgs::Joy::ConstPtr& msg, b
     double x_off, y_off, z_off, joy_sp;
 
     // Calculate the z offset
-    joy_sp = msg->axes[joyAxes.throttle];
+    joy_sp = msg->axes[joy_axis_.throttle];
     if (joy_sp > -th_deadband && joy_sp < th_deadband)
     {
         joy_sp = 0;
     }
 
-    z_off = joy_sp * maxPos.throttle;
+    z_off = joy_sp * max_pos_value_.throttle;
 
     if (adjust_xy)
     {
         // Calculate the y offset
-        joy_sp = msg->axes[joyAxes.pitch];
+        joy_sp = msg->axes[joy_axis_.roll];
         if (joy_sp > -xy_deadband && joy_sp < xy_deadband)
         {
             joy_sp = 0;
         }
-        y_off = joy_sp * maxPos.pitch;
+        y_off = joy_sp * max_pos_value_.roll;
 
         // Calculate the x offset
-        joy_sp = msg->axes[joyAxes.roll];
+        joy_sp = msg->axes[joy_axis_.pitch];
         if (joy_sp > -xy_deadband && joy_sp < xy_deadband)
         {
             joy_sp = 0;
         }
-        x_off = joy_sp * -maxPos.roll;
+        x_off = joy_sp * max_pos_value_.pitch;
     }
     else
     {
         y_off = 0;
         x_off = 0;
     }
-    geometry_msgs::Point p_off = locator->convertRFUtoENUoff(x_off, y_off, z_off);
-    geometry_msgs::Point p = vehicle_setpoint_ENU.position;
+    geometry_msgs::Point p_off = locator_->convertFLUtoENUoff(x_off, y_off, z_off);
+    geometry_msgs::Point p = vehicle_setpoint_ENU_.position;
     p.x += p_off.x;
     p.y += p_off.y;
     p.z += p_off.z;
-    vehicle_setpoint_ENU.setPosition(p);
+    vehicle_setpoint_ENU_.setPosition(p);
     sendPositionCommand(p.x, p.y, p.z);
 }
 
