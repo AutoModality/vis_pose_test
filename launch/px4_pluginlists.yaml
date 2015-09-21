@@ -1,5 +1,9 @@
 plugin_blacklist:
-- 'image_pub'
+# common
+- safety_area
+# extras
+- vibration
+- distance_sensor
 
 plugin_whitelist: []
 #- 'sys_*'
