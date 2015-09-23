@@ -142,46 +142,47 @@ These instructons assume you are running Ubuntu on the companion computer. If no
 2. Install ROS Jade
 (adapted from http://wiki.ros.org/jade/Installation/Ubuntu)
 
-$ sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-$ sudo apt-key adv --keyserver hkp://pool.sks-keyservers.net --recv-key 0xB01FA116
-$ sudo apt-get update
-$ sudo apt-get install ros-jade-desktop
-$ sudo rosdep init
-$ rosdep update
-$ echo "source /opt/ros/jade/setup.bash" >> ~/.bashrc
-$ source ~/.bashrc
-$ sudo apt-get install python-rosinstall
+    $ sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+    $ sudo apt-key adv --keyserver hkp://pool.sks-keyservers.net --recv-key 0xB01FA116
+    $ sudo apt-get update
+    $ sudo apt-get install ros-jade-desktop
+    $ sudo rosdep init
+    $ rosdep update
+    $ echo "source /opt/ros/jade/setup.bash" >> ~/.bashrc
+    $ source ~/.bashrc
+    $ sudo apt-get install python-rosinstall
 
 1. Install mavros and mavlink
 Note that the version used to test vis_pose_test uses an extension to version 0.14.2 of mavros. In addition the version of mavlink that was tested was Mavlink 2015.8.8. The extension to mavros is simply a new plugin that adds a new topic for attitude control and should be compatible with future version of mavros. The official ROS repositories take time to get upddated with newer releases and you will find that different platfroms get updated at different rates. Therefore to insure that you are getting the correct version of both mavros and mavlink that are compatible with the version of Firmware loaded into the Pixhawk we recommend that you build them from sources according to the directions below.
 
-$ mkdir -p ~/mav_catkin_ws/src
-$ cd ~/mav_catkin_ws/src
-$ wstool init
-$ git clone https://github.com/AutoModality/mavros -b am_master
-$ rosinstall_generator mavlink | tee /tmp/rosinstall.yaml
-$ wstool merge /tmp/rosinstall.yaml
-$ wstool up -j4
-$ cd ..
-$ catkin build
-$ sudo usermod -aG dialout (username used to log into Ubuntu)
+    $ mkdir -p ~/mav_catkin_ws/src
+    $ cd ~/mav_catkin_ws/src
+    $ wstool init
+    $ git clone https://github.com/AutoModality/mavros -b am_master
+    $ rosinstall_generator mavlink | tee /tmp/rosinstall.yaml
+    $ wstool merge /tmp/rosinstall.yaml
+    $ wstool up -j4
+    $ cd ..
+    $ catkin build
+    $ sudo usermod -aG dialout (username used to log into Ubuntu)
 
-1. Configure vis_pose_test workspace
+2. Configure vis_pose_test workspace
 Note that since it is unlikely that changes will be required to mavros and because it uses a different tool chain to build than the officialy released ROS tool chain we are using the concpet of overlaid packages to seperate the vis_pose_test catkin environment from the mavros environment. This approach is adapted from http://wiki.ros.org/catkin/Tutorials/workspace_overlaying.
 
-$ mkdir -p ~/catkin_ws/src
-$ cd ~/catkin_ws/src
-$ catkin_init_workspace
-$ cd ..
-$ source ~/mav_catkin_ws/devel/setup.sh
-$ catkin_make
-$ echo "source ~/catkin_ws/devel/setup.sh" >> ~/.bashrc
-1. Install vis_pose_test
-In a new shell:
-$ cd ~/catkin_ws/src
-$ git clone https://github.com/AutoModality/vis_pose_test
-$ cd ..
-$ catkin_make
+    $ mkdir -p ~/catkin_ws/src
+    $ cd ~/catkin_ws/src
+    $ catkin_init_workspace
+    $ cd ..
+    $ source ~/mav_catkin_ws/devel/setup.sh
+    $ catkin_make
+    $ echo "source ~/catkin_ws/devel/setup.sh" >> ~/.bashrc
+    
+3. Install vis_pose_test
+    In a new shell:
+    $ cd ~/catkin_ws/src
+    $ git clone https://github.com/AutoModality/vis_pose_test
+    $ cd ..
+    $ catkin_make
 
 #### Using Eclipse
 For those that like to use Eclipse for their development please see the following instructions.
