@@ -166,7 +166,7 @@ These instructons assume you are running Ubuntu on the companion computer. If no
     $ source ~/.bashrc
     $ sudo apt-get install python-rosinstall
 
-1. Install mavros and mavlink
+3. Install mavros and mavlink
 
 Note that the version used to test vis_pose_test uses an extension to version 0.14.2 of mavros. In addition the version of mavlink that was tested was Mavlink 2015.8.8. The extension to mavros is simply a new plugin that adds a new topic for attitude control and should be compatible with future version of mavros. The official ROS repositories take time to get upddated with newer releases and you will find that different platfroms get updated at different rates. Therefore to insure that you are getting the correct version of both mavros and mavlink that are compatible with the version of Firmware loaded into the Pixhawk we recommend that you build them from sources according to the directions below.
 
@@ -206,11 +206,11 @@ In a new shell:
 
 For those that like to use Eclipse for their development please see the following instructions.
 
-**++Install Java++**
+**Install Java**
 
 	$ sudo apt-get install openjdk-7-jre
 
-**++Install Eclipse++**
+**Install Eclipse**
 
 Download Eclipse IDE for C/C++ Developers, Linux, 64 bit from https://eclipse.org/downloads/.
 
@@ -219,7 +219,7 @@ Install (assuming tarball is in ~/Downloads):
 	$ cd ~
 	$ tar xzvf Downloads/eclipse-cpp-mars-R-linux-gtk-x86_64.tar.gz
     
-**++Configure Eclipse ROS Integration (adapted from http://wiki.ros.org/IDEs)++**
+**Configure Eclipse ROS Integration (adapted from http://wiki.ros.org/IDEs)**
 
 Create the Eclipse project file
 
