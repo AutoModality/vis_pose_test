@@ -152,7 +152,6 @@ The companion computer used to test vis_pose_test was interface to the Pixwak us
 These instructons assume you are running Ubuntu on the companion computer. If not then adjust the directions accordingly.
 
 1. Install Ubuntu
-
 2. Install ROS Jade
 
 (adapted from http://wiki.ros.org/jade/Installation/Ubuntu)
@@ -258,15 +257,15 @@ Right click on "build" and select "properties"
 
 	- Click "OK"
 
-**++Editing Files++**
+**Editing Files**
 
 Edit files by expanding the "build->[Source directory]" in the "Project Explorer" and navigating to the file.
 
-**++Building++**
+**Building**
 
 Select "Project->Build All" or press Ctrl-B.
 
-**++Cleaning++**
+**Cleaning**
 
 Right click on the "build" project and select "Clean Project".
 
@@ -308,10 +307,13 @@ It is a good idea to have some sort or console output that indicates that everyt
     If you desire more output to see what is happening in vis_pose_test use ROS to turn on the ROS_DEBUG messages and 
 
 ### Validating Operation
+
 Before attempting any flights you should do extensive bench testing to insure that the localization and control are working properly. The steps below will help insure things are operating properly
 
 #### Validating Vision Based Localization
+
 The first step to validating that the locaization is working properly is to use the QGC Analyze view to plot the following:
+
 - LOCAL_POSIITION_NED.x
 - LOCAL_POSIITION_NED.y
 - LOCAL_POSIITION_NED.z
@@ -330,10 +332,13 @@ As a final test put the UAS on one end of the board and the target on the other 
 
 
 #### Validating Offboard Control
+
 The control loop in controller.cpp is driven by messages received on the joy topic from the rc_joystick node. Every time a message is received on the joy topic then a setpoint message is sent to the Pixhawk. If you want to change the frequency of setpoint messages then you must change the frequency of joy messages. This also means that if joy messages are not being received by  vis_pose_test then no setpoint message will be sent to the Pixhawk. This may happen if the rc controller is  not powered on or if the rc_joystick ROS node is not operating properly.
+
 There is a watchdog timer in vis_pose_test that prints a warning to the console if setpoint messages are not been sent by vis_pose_test in a timely fashion. If you do not see watchdog timeout messages being printed on the console then setpoint messages are being published by vis_pose_test.
 The Pixhawk will not go into or stay in OFFBOARD mode unless it receives setpioint messages on a regular basis. To confirm that the Pixhawk is in fact receiving the setpoint message you need only move the offboard switch on the rc controller to the OFFBOARD position. If the Pixhawk can successfully go into OFFBOARD mode then the QGC will indicate this both with an enunciation and the filght status changing to OFFBOARD.
 Before arming the UAS and trying to fly, perform the following steps to validate that offboard control is working as expected.
+
 1. Set both the onboard and the offboard flight mode switch to MANUAL. Confirm that you are not getting any watchdog timeout messages on the vis_pose_test console.
 2. Move the offboard switch to the OFFBOARD position. The QGC should inidcate that the Pixhawk is in OFFBOARD mode. If it does then it is successfully receiving attitude setpoints. If the Pixhawk is not successfully receiving attitude setpoints it will not go into OFFBOARD mode and the QGC will enunciate "REJECT OFFBOARD" which it will repeat every few seconds until you move the offboard switch back to the ONBOARD position.
 2. With the offboard switch still in the OFFBOARD position, briefly move the offboard flight mode switch to POSCTL and then back to the MANUAL position. Look at the QGC Analyze screen and locate the POSITION_TARGET_LOCAL_NED telemetry stream. Plot the x,y,z coordinates. This is the stream that shows position setpoint values. It will not apear until setpoints are received so if you can not find the POSITION_TARGET_LOCAL_NED this probably indicates that the Pixhawk did not receive any position setpoints.
@@ -352,6 +357,7 @@ Moving the offboard flight mode switch to different positions selects between th
 As noted they operate the same as the ONBOARD flight modes so if you are familiar with those then you should be able to operate the UAS the same way in offboard mode. One difference is that because the UAS localization is done using the target or marker moving the target or marker while the UAS is in flight should casue the UAS to also move to maintain the same setpoint with respect to the target.
 
 To test fly do the following steps.
+
 1. Put the UAS offboard switch into the ONBOARD position. Put both the onboard and offboard flight mode switches into MANUAL.
 1. Arm the UAS. Fly it manually briefly to make sure it is working.
 2. With the UAS still armed and on the ground move the offboard switch to the OFFBOARD position and confirm that the Pixhawk goes into OFFBOARD mode. Note that we recommend that initially you never put the UAS into OFFBOARD mode unless the onboard and offboard flight mode switches are both in the MANUAL position.
@@ -369,7 +375,8 @@ To test fly do the following steps.
 	- If you do not get stable flight then try adjusting the postion control paramedters. You may also have to look at your vision system performance including such factors as frames per second and latencies between image capture to whent he locations are sent to the Pixhawk. If your UAS is osciallating around some setpoint this is a classsic sign of latencies in the control loop which might be caused by latencies in the vision based localization.
 1. Once you achieve stable altitude control repeat the above steps but move the offboard flight mode into POSCTL. Now you should be able to control the UAS in not only the z direction, but also the x,y.
 
-**++FAIL SAFES++**
+**FAIL SAFES**
+
 There are fail safes built into the system such that if vis_pose_test detects the loss of marker or target acquisition by the vision system then it stops sending setpoints to the Pixhawk. Vis_pose_test detects the loss of target acquisition when it receives an empty list from the vision system. There are currently no timers in vis_pose_test that detect when the vision_pose/pose topic has not been updated in a timely fashion although these can be easily added if desired.
 When vis_pose_test does go into failsafe mode the setpoints will cease to be sent to the Pixhawk and the watchdog timeouts will be dispalyed on the screen. This will cause the Pixhawk to drop out of OFFBOARD mode and you should get the enunciation "REJECT OFFBOARD". Note that when the Pixhawk drops out of OFFBOARD mode it will try to drop into whatever flight mode indicated by the onboard flight mode switch so it is probably desireable to have it in the MANUAL position.
 Once the vis_pose_test goes into failsafe mode you can not resume normal operation until you set the offboard switch to ONBOARD AND you set the offbaord flight mode switch to MANUAL.
