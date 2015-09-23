@@ -141,6 +141,7 @@ These instructons assume you are running Ubuntu on the companion computer. If no
 1. Install Ubuntu
 2. Install ROS Jade
 (adapted from http://wiki.ros.org/jade/Installation/Ubuntu)
+
 $ sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 $ sudo apt-key adv --keyserver hkp://pool.sks-keyservers.net --recv-key 0xB01FA116
 $ sudo apt-get update
@@ -153,6 +154,7 @@ $ sudo apt-get install python-rosinstall
 
 1. Install mavros and mavlink
 Note that the version used to test vis_pose_test uses an extension to version 0.14.2 of mavros. In addition the version of mavlink that was tested was Mavlink 2015.8.8. The extension to mavros is simply a new plugin that adds a new topic for attitude control and should be compatible with future version of mavros. The official ROS repositories take time to get upddated with newer releases and you will find that different platfroms get updated at different rates. Therefore to insure that you are getting the correct version of both mavros and mavlink that are compatible with the version of Firmware loaded into the Pixhawk we recommend that you build them from sources according to the directions below.
+
 $ mkdir -p ~/mav_catkin_ws/src
 $ cd ~/mav_catkin_ws/src
 $ wstool init
@@ -166,6 +168,7 @@ $ sudo usermod -aG dialout (username used to log into Ubuntu)
 
 1. Configure vis_pose_test workspace
 Note that since it is unlikely that changes will be required to mavros and because it uses a different tool chain to build than the officialy released ROS tool chain we are using the concpet of overlaid packages to seperate the vis_pose_test catkin environment from the mavros environment. This approach is adapted from http://wiki.ros.org/catkin/Tutorials/workspace_overlaying.
+
 $ mkdir -p ~/catkin_ws/src
 $ cd ~/catkin_ws/src
 $ catkin_init_workspace
@@ -208,6 +211,7 @@ Start Eclipse (the source command can be skipped if you already have it in your 
 	$ ./eclipse
 
 Enter "/home/ubuntu/catkin_ws" for the "Workspace" and click "OK"
+
 Select "File->Import...->General->Existing Projects into Workspace” and click "Next"
 - Select "Select root directory" and enter "/home/ubuntu/catkin_ws"
 - Click "Finish"
@@ -227,12 +231,15 @@ Right click on "build" and select "properties"
 	- Click "OK"
 
 **++Editing Files++**
+
 Edit files by expanding the "build->[Source directory]" in the "Project Explorer" and navigating to the file.
 
 **++Building++**
+
 Select "Project->Build All" or press Ctrl-B.
 
 **++Cleaning++**
+
 Right click on the "build" project and select "Clean Project".
 
 
@@ -294,7 +301,7 @@ As a final test put the UAS on one end of the board and the target on the other 
 
 
 
-### Validating Offboard Control
+#### Validating Offboard Control
 The control loop in controller.cpp is driven by messages received on the joy topic from the rc_joystick node. Every time a message is received on the joy topic then a setpoint message is sent to the Pixhawk. If you want to change the frequency of setpoint messages then you must change the frequency of joy messages. This also means that if joy messages are not being received by  vis_pose_test then no setpoint message will be sent to the Pixhawk. This may happen if the rc controller is  not powered on or if the rc_joystick ROS node is not operating properly.
 There is a watchdog timer in vis_pose_test that prints a warning to the console if setpoint messages are not been sent by vis_pose_test in a timely fashion. If you do not see watchdog timeout messages being printed on the console then setpoint messages are being published by vis_pose_test.
 The Pixhawk will not go into or stay in OFFBOARD mode unless it receives setpioint messages on a regular basis. To confirm that the Pixhawk is in fact receiving the setpoint message you need only move the offboard switch on the rc controller to the OFFBOARD position. If the Pixhawk can successfully go into OFFBOARD mode then the QGC will indicate this both with an enunciation and the filght status changing to OFFBOARD.
