@@ -90,16 +90,19 @@ The system configured for the development of vis_pose_test did not require any e
 
 #### Configure Pixhawk Parameters
 A nunmber of parameters should be set using QGC. As a starting point you can use the sample.param file described above. Use caution when loading this parameter file since if you have already made changes to your parameters as part of the above procedures then you will overwirte those changes by loading sample.param. The following discusses considerations for each of the major parameter sections that can be edited using QGC.
+
 2. **System**
 The System parameters configure the interface between the Pixhawk and the companion computer. The following parameters were used for testing vis_pose_test. You may need to use different values depending upon how you interfraced your compnaion computer to the Pixhawk
 	- SYS_AUTOSTART	12001
 	- SYS_COMPANION 921600
 	- SYS_RESTART_TYPE 0
+
 4. **Radio Switches**
 Set up the RC radio switches to switch into various flight modes. There are the normal onboard Pixhawk flights modes (MANUAL, ALTCTL, POSCTL) and there are offboard flight modes (MANUAL, ALTCTL, POSCTL) that mirror the same onboard functionality except using offboard setpoint commands. Vis_pose_test was tested using a Spektrum DX8 with the following switch configuration. Consult the sample.param file.
 	- A three position switch to switch between MANUAL, ALTCTL, and POSCTL. The radio used in the testing of vis_pose_test used the FLAPS switch on the DX8 or this purpose.
 	- A two position switch used to switch between offboard and ONBOARD-CONTROL. The radio used in the testing of vis_pose_test used the GEAR switch on the DX8 for this purpose. The vis_pose_test node assumes this switch so if you diecide to use a different switch you wil need to change control.cpp appropriately to map a different switch.
 	- A three position switch used to switch between OFFBOARD-MANUAL, OFFBOARD-ALTCTL, and OFFBOARD-POSCTL. The SW used in testing this package used the AUX 2 switch on the DX8 for this purpose. The vis_pose_test node assumes this switch so if you diecide o use a different switch you wil need to change control.cpp appropriately to map a differetn switch.
+
 1. **Position Estimator INAV**
 Vis_pose_test was tested using the INAV position estimator since that estimator currently supports vision based location inputs. The testing was done indoors with GPS disabled to insure the localization was to a large extent based on the vision based pose information. These parameters should be tuned to best suit your vision system. The following INAV parameters were modified from their default values.
 	- INAV_W_ACC_BIAS 0.01
