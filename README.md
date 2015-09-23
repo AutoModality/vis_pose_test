@@ -91,19 +91,22 @@ The system configured for the development of vis_pose_test did not require any e
 #### Configure Pixhawk Parameters
 A nunmber of parameters should be set using QGC. As a starting point you can use the sample.param file described above. Use caution when loading this parameter file since if you have already made changes to your parameters as part of the above procedures then you will overwirte those changes by loading sample.param. The following discusses considerations for each of the major parameter sections that can be edited using QGC.
 
-2. **System**
+**System**
+
 The System parameters configure the interface between the Pixhawk and the companion computer. The following parameters were used for testing vis_pose_test. You may need to use different values depending upon how you interfraced your compnaion computer to the Pixhawk
 	- SYS_AUTOSTART	12001
 	- SYS_COMPANION 921600
 	- SYS_RESTART_TYPE 0
 
-4. **Radio Switches**
+**Radio Switches**
+
 Set up the RC radio switches to switch into various flight modes. There are the normal onboard Pixhawk flights modes (MANUAL, ALTCTL, POSCTL) and there are offboard flight modes (MANUAL, ALTCTL, POSCTL) that mirror the same onboard functionality except using offboard setpoint commands. Vis_pose_test was tested using a Spektrum DX8 with the following switch configuration. Consult the sample.param file.
 	- A three position switch to switch between MANUAL, ALTCTL, and POSCTL. The radio used in the testing of vis_pose_test used the FLAPS switch on the DX8 or this purpose.
 	- A two position switch used to switch between offboard and ONBOARD-CONTROL. The radio used in the testing of vis_pose_test used the GEAR switch on the DX8 for this purpose. The vis_pose_test node assumes this switch so if you diecide to use a different switch you wil need to change control.cpp appropriately to map a different switch.
 	- A three position switch used to switch between OFFBOARD-MANUAL, OFFBOARD-ALTCTL, and OFFBOARD-POSCTL. The SW used in testing this package used the AUX 2 switch on the DX8 for this purpose. The vis_pose_test node assumes this switch so if you diecide o use a different switch you wil need to change control.cpp appropriately to map a differetn switch.
 
-1. **Position Estimator INAV**
+**Position Estimator INAV**
+
 Vis_pose_test was tested using the INAV position estimator since that estimator currently supports vision based location inputs. The testing was done indoors with GPS disabled to insure the localization was to a large extent based on the vision based pose information. These parameters should be tuned to best suit your vision system. The following INAV parameters were modified from their default values.
 	- INAV_W_ACC_BIAS 0.01
 	- INAV_W_XY_GPS_P 0
@@ -114,7 +117,8 @@ Vis_pose_test was tested using the INAV position estimator since that estimator 
 	- INAV_W_Z_VIS_P 1
 	- INAV_W_Z_VIS_V 0 (new parameter)
 
-2. **Multicopter Positon Control**
+**Multicopter Positon Control**
+
 These parameters control the postion control of the UAS and will dictate how agressively it will respond to positon setpoints. Their values are dependent upon a number of factors including vehicle dynamics and vision system performance. The parameters in smaple.param are intentionally set to give very slow overdamped responsesot setpoints. Once you have your system flying the way you like you can increase the various PID loop gains to change behavior. The following parameters were changed form their default values.
 	- MPC_MANTHR_MIN 0
 	- MPC_THR_MAX 1
@@ -123,10 +127,12 @@ These parameters control the postion control of the UAS and will dictate how agr
 	- MPC_Z_P 0.5
 	- MPC_Z_VEL_P 0.15
 
-2. **Multicopter Attitude Control**
+**Multicopter Attitude Control**
+
 These parameters are completely dependent upon your frame type and UAS performance and should be tuned accordingly. Do not expect the parameters in the sample.param file to work for your paltform and in fact if you have loaded the sample.param file you should as a first step change any of the parameters that are different from their defajult values back to their defaults.
 
-1. **Attitude Estimator EKF**
+**Attitude Estimator EKF**
+
 A new parameter (ATT_VIS_EN) was added to this attitude estimator to diable the vision inputs use in the estimator.
 
 ### Companion Computer
@@ -134,11 +140,15 @@ A new parameter (ATT_VIS_EN) was added to this attitude estimator to diable the 
 This section describes setting up the companion computer.
 
 #### Interface to Pixhawk
+
 The companion computer used to test vis_pose_test was interface to the Pixwak using an FTDI USB serial cable connected to the TELEM 2 part of the Pixhawk as described here [https://pixhawk.org/dev/companion_link](https://pixhawk.org/dev/companion_link).
 
 #### Set up Software
+
 These instructons assume you are running Ubuntu on the companion computer. If not then adjust the directions accordingly.
+
 1. Install Ubuntu
+
 2. Install ROS Jade
 
 (adapted from http://wiki.ros.org/jade/Installation/Ubuntu)
